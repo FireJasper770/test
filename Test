@@ -1,0 +1,174 @@
+ function(e, t) {
+    var n = Math.floor
+      , i = Math.abs
+      , r = Math.cos
+      , s = Math.sin
+      , a = (Math.pow,
+    Math.sqrt);
+    e.exports = function(e, t, o, c, l, h) {
+        var u, f;
+        this.objects = t,
+        this.grids = {},
+        this.updateObjects = [];
+        var d = c.mapScale / c.colGrid;
+        this.setObjectGrids = function(e) {
+            for (var t = Math.min(c.mapScale, Math.max(0, e.x)), n = Math.min(c.mapScale, Math.max(0, e.y)), i = 0; i < c.colGrid; ++i) {
+                u = i * d;
+                for (var r = 0; r < c.colGrid; ++r)
+                    f = r * d,
+                    t + e.scale >= u && t - e.scale <= u + d && n + e.scale >= f && n - e.scale <= f + d && (this.grids[i + "_" + r] || (this.grids[i + "_" + r] = []),
+                    this.grids[i + "_" + r].push(e),
+                    e.gridLocations.push(i + "_" + r))
+            }
+        }
+        ,
+        this.removeObjGrid = function(e) {
+            for (var t, n = 0; n < e.gridLocations.length; ++n)
+                (t = this.grids[e.gridLocations[n]].indexOf(e)) >= 0 && this.grids[e.gridLocations[n]].splice(t, 1)
+        }
+        ,
+        this.disableObj = function(e) {
+            if (e.active = !1,
+            h) {
+                e.owner && e.pps && (e.owner.pps -= e.pps),
+                this.removeObjGrid(e);
+                var t = this.updateObjects.indexOf(e);
+                t >= 0 && this.updateObjects.splice(t, 1)
+            }
+        }
+        ,
+        this.hitObj = function(e, t) {
+            for (var n = 0; n < l.length; ++n)
+                l[n].active && (e.sentTo[l[n].id] && (e.active ? l[n].canSee(e) && h.send(l[n].id, "8", o.fixTo(t, 1), e.sid) : h.send(l[n].id, "12", e.sid)),
+                e.active || e.owner != l[n] || l[n].changeItemCount(e.group.id, -1))
+        }
+        ;
+        var p, g, m = [];
+        this.getGridArrays = function(e, t, i) {
+            u = n(e / d),
+            f = n(t / d),
+            m.length = 0;
+            try {
+                this.grids[u + "_" + f] && m.push(this.grids[u + "_" + f]),
+                e + i >= (u + 1) * d && ((p = this.grids[u + 1 + "_" + f]) && m.push(p),
+                f && t - i <= f * d ? (p = this.grids[u + 1 + "_" + (f - 1)]) && m.push(p) : t + i >= (f + 1) * d && (p = this.grids[u + 1 + "_" + (f + 1)]) && m.push(p)),
+                u && e - i <= u * d && ((p = this.grids[u - 1 + "_" + f]) && m.push(p),
+                f && t - i <= f * d ? (p = this.grids[u - 1 + "_" + (f - 1)]) && m.push(p) : t + i >= (f + 1) * d && (p = this.grids[u - 1 + "_" + (f + 1)]) && m.push(p)),
+                t + i >= (f + 1) * d && (p = this.grids[u + "_" + (f + 1)]) && m.push(p),
+                f && t - i <= f * d && (p = this.grids[u + "_" + (f - 1)]) && m.push(p)
+            } catch (e) {}
+            return m
+        }
+        ,
+        this.add = function(n, i, r, s, a, o, c, l, u) {
+            g = null;
+            for (var f = 0; f < t.length; ++f)
+                if (t[f].sid == n) {
+                    g = t[f];
+                    break
+                }
+            if (!g)
+                for (f = 0; f < t.length; ++f)
+                    if (!t[f].active) {
+                        g = t[f];
+                        break
+                    }
+            g || (g = new e(n),
+            t.push(g)),
+            l && (g.sid = n),
+            g.init(i, r, s, a, o, c, u),
+            h && (this.setObjectGrids(g),
+            g.doUpdate && this.updateObjects.push(g))
+        }
+        ,
+        this.disableBySid = function(e) {
+            for (var n = 0; n < t.length; ++n)
+                if (t[n].sid == e) {
+                    this.disableObj(t[n]);
+                    break
+                }
+        }
+        ,
+        this.removeAllItems = function(e, n) {
+            for (var i = 0; i < t.length; ++i)
+                t[i].active && t[i].owner && t[i].owner.sid == e && this.disableObj(t[i]);
+            n && n.broadcast("13", e)
+        }
+        ,
+        this.fetchSpawnObj = function(e) {
+            for (var n = null, i = 0; i < t.length; ++i)
+                if ((g = t[i]).active && g.owner && g.owner.sid == e && g.spawnPoint) {
+                    n = [g.x, g.y],
+                    this.disableObj(g),
+                    h.broadcast("12", g.sid),
+                    g.owner && g.owner.changeItemCount(g.group.id, -1);
+                    break
+                }
+            return n
+        }
+        ,
+        this.checkItemLocation = function(e, n, i, r, s, a, l) {
+            for (var h = 0; h < t.length; ++h) {
+                var u = t[h].blocker ? t[h].blocker : t[h].getScale(r, t[h].isItem);
+                if (t[h].active && o.getDistance(e, n, t[h].x, t[h].y) < i + u)
+                    return !1
+            }
+            return !(!a && 18 != s && n >= c.mapScale / 2 - c.riverWidth / 2 && n <= c.mapScale / 2 + c.riverWidth / 2)
+        }
+        ,
+        this.addProjectile = function(e, t, n, i, r) {
+            for (var s, a = items.projectiles[r], c = 0; c < projectiles.length; ++c)
+                if (!projectiles[c].active) {
+                    s = projectiles[c];
+                    break
+                }
+            s || (s = new Projectile(l,o),
+            projectiles.push(s)),
+            s.init(r, e, t, n, a.speed, i, a.scale)
+        }
+        ,
+        this.checkCollision = function(e, t, n) {
+            n = n || 1;
+            var l = e.x - t.x
+              , h = e.y - t.y
+              , u = e.scale + t.scale;
+            if (i(l) <= u || i(h) <= u) {
+                u = e.scale + (t.getScale ? t.getScale() : t.scale);
+                var f = a(l * l + h * h) - u;
+                if (f <= 0) {
+                    if (t.ignoreCollision)
+                        !t.trap || e.noTrap || t.owner == e || t.owner && t.owner.team && t.owner.team == e.team ? t.boostSpeed ? (e.xVel += n * t.boostSpeed * (t.weightM || 1) * r(t.dir),
+                        e.yVel += n * t.boostSpeed * (t.weightM || 1) * s(t.dir)) : t.healCol ? e.healCol = t.healCol : t.teleport && (e.x = o.randInt(0, c.mapScale),
+                        e.y = o.randInt(0, c.mapScale)) : (e.lockMove = !0,
+                        t.hideFromEnemy = !1);
+                    else {
+                        var d = o.getDirection(e.x, e.y, t.x, t.y);
+                        if (o.getDistance(e.x, e.y, t.x, t.y),
+                        t.isPlayer ? (f = -1 * f / 2,
+                        e.x += f * r(d),
+                        e.y += f * s(d),
+                        t.x -= f * r(d),
+                        t.y -= f * s(d)) : (e.x = t.x + u * r(d),
+                        e.y = t.y + u * s(d),
+                        e.xVel *= .75,
+                        e.yVel *= .75),
+                        t.dmg && t.owner != e && (!t.owner || !t.owner.team || t.owner.team != e.team)) {
+                            e.changeHealth(-t.dmg, t.owner, t);
+                            var p = 1.5 * (t.weightM || 1);
+                            e.xVel += p * r(d),
+                            e.yVel += p * s(d),
+                            !t.pDmg || e.skin && e.skin.poisonRes || (e.dmgOverTime.dmg = t.pDmg,
+                            e.dmgOverTime.time = 5,
+                            e.dmgOverTime.doer = t.owner),
+                            e.colDmg && t.health && (t.changeHealth(-e.colDmg) && this.disableObj(t),
+                            this.hitObj(t, o.getDirection(e.x, e.y, t.x, t.y)))
+                        }
+                    }
+                    return t.zIndex > e.zIndex && (e.zIndex = t.zIndex),
+                    !0
+                }
+            }
+            return !1
+        }
+    }
+}
